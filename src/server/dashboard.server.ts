@@ -110,6 +110,9 @@ export async function getDashboardDataRecord() {
         type: transactions.type,
         title: transactions.title,
         amount: transactions.amount,
+
+        adjustmentDirection: transactions.adjustmentDirection,
+
         transactionDate: transactions.transactionDate,
 
         accountName: accounts.name,

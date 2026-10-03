@@ -26,6 +26,8 @@ import { Textarea } from '#/components/ui/textarea'
 import { updateFavoriteSchema } from '#/schemas/favorite'
 import type { UpdateFavoriteValues } from '#/schemas/favorite'
 import { updateFavorite } from '#/server/favorites.functions'
+import { formatRupiah } from '#/lib/money'
+import { MoneyInput } from '../ui/money-input'
 
 type Account = {
   id: string
@@ -86,14 +88,6 @@ const favoriteTypes = [
     label: 'Investasi',
   },
 ] as const
-
-function formatRupiah(value: number) {
-  if (!value) {
-    return ''
-  }
-
-  return new Intl.NumberFormat('id-ID').format(value)
-}
 
 export function TransactionFavoriteEditSheet({
   favorite,
@@ -247,22 +241,17 @@ export function TransactionFavoriteEditSheet({
                 <Label htmlFor="favoriteAmount">Nominal</Label>
 
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
                     Rp
                   </span>
 
-                  <Input
+                  <MoneyInput
                     id="favoriteAmount"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    value={formatRupiah(field.value)}
-                    onChange={(event) => {
-                      const digits = event.target.value.replace(/\D/g, '')
-
-                      field.onChange(digits ? Number(digits) : 0)
-                    }}
-                    className="h-14 pl-11 text-2xl font-semibold"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    invalid={fieldState.invalid}
+                    className="h-14 pl-11 text-2xl font-semibold tabular-nums"
                   />
                 </div>
 

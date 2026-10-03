@@ -1,8 +1,11 @@
 import type { SQL } from 'drizzle-orm'
+
 import { and, desc, eq, gte, ilike, lt, or, sql } from 'drizzle-orm'
 
 import { db } from '#/db'
+
 import { accounts, categories, transactions } from '#/db/schema'
+
 import type {
   DeleteTransactionValues,
   TransactionFormValues,
@@ -26,7 +29,7 @@ export async function createTransactionRecord(data: TransactionFormValues) {
     throw new Error('Account asal tidak ditemukan')
   }
 
-  if (sourceAccount.type === 'investment') {
+  if (sourceAccount.type === 'investment' && data.type !== 'adjustment') {
     throw new Error(
       'Account investasi tidak dapat digunakan sebagai account asal',
     )
@@ -34,6 +37,15 @@ export async function createTransactionRecord(data: TransactionFormValues) {
 
   let categoryId: string | null = null
   let targetAccountId: string | null = null
+  let adjustmentDirection: 'increase' | 'decrease' | null = null
+
+  if (data.type === 'adjustment') {
+    if (!data.adjustmentDirection) {
+      throw new Error('Arah penyesuaian saldo wajib dipilih')
+    }
+
+    adjustmentDirection = data.adjustmentDirection
+  }
 
   if (data.type === 'expense' || data.type === 'income') {
     if (!data.categoryId) {
@@ -112,6 +124,7 @@ export async function createTransactionRecord(data: TransactionFormValues) {
       accountId: sourceAccount.id,
       categoryId,
       targetAccountId,
+      adjustmentDirection,
       transactionDate: data.transactionDate,
       note: data.note?.trim() || null,
     })
@@ -120,6 +133,7 @@ export async function createTransactionRecord(data: TransactionFormValues) {
       type: transactions.type,
       title: transactions.title,
       amount: transactions.amount,
+      adjustmentDirection: transactions.adjustmentDirection,
       transactionDate: transactions.transactionDate,
     })
 
@@ -211,6 +225,8 @@ export async function findTransactions(
       title: transactions.title,
       amount: transactions.amount,
 
+      adjustmentDirection: transactions.adjustmentDirection,
+
       transactionDate: transactions.transactionDate,
 
       note: transactions.note,
@@ -285,7 +301,7 @@ export async function updateTransactionRecord(
     throw new Error('Account asal yang dipilih sudah nonaktif')
   }
 
-  if (sourceAccount.type === 'investment') {
+  if (sourceAccount.type === 'investment' && data.type !== 'adjustment') {
     throw new Error(
       'Account investasi tidak dapat digunakan sebagai account asal',
     )
@@ -293,6 +309,15 @@ export async function updateTransactionRecord(
 
   let categoryId: string | null = null
   let targetAccountId: string | null = null
+  let adjustmentDirection: 'increase' | 'decrease' | null = null
+
+  if (data.type === 'adjustment') {
+    if (!data.adjustmentDirection) {
+      throw new Error('Arah penyesuaian saldo wajib dipilih')
+    }
+
+    adjustmentDirection = data.adjustmentDirection
+  }
 
   if (data.type === 'expense' || data.type === 'income') {
     if (!data.categoryId) {
@@ -380,6 +405,7 @@ export async function updateTransactionRecord(
       accountId: sourceAccount.id,
       categoryId,
       targetAccountId,
+      adjustmentDirection,
       transactionDate: data.transactionDate,
       note: data.note?.trim() || null,
       updatedAt: new Date(),
@@ -390,6 +416,7 @@ export async function updateTransactionRecord(
       type: transactions.type,
       title: transactions.title,
       amount: transactions.amount,
+      adjustmentDirection: transactions.adjustmentDirection,
       transactionDate: transactions.transactionDate,
     })
 

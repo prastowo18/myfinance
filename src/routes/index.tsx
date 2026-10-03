@@ -6,6 +6,7 @@ import { getCategories } from '#/server/categories.functions'
 import { getDashboardData } from '#/server/dashboard.functions'
 import { getFavorites } from '#/server/favorites.functions'
 import { getTransactionSuggestions } from '#/server/transactions.functions'
+import { formatPlainRupiah, formatRupiah } from '#/lib/money'
 
 export const Route = createFileRoute('/')({
   loader: async () => {
@@ -32,6 +33,7 @@ const transactionTypeLabels = {
   income: 'Pemasukan',
   transfer: 'Transfer',
   investment: 'Investasi',
+  adjustment: 'Penyesuaian Saldo',
 } as const
 
 const accountTypeLabels = {
@@ -41,18 +43,6 @@ const accountTypeLabels = {
   credit_card: 'Kartu Kredit',
   investment: 'Investasi',
 } as const
-
-function formatRupiah(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
-
-function formatPlainRupiah(value: number) {
-  return new Intl.NumberFormat('id-ID').format(value)
-}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -242,8 +232,7 @@ function DashboardPage() {
                         </div>
 
                         <p className="shrink-0 font-semibold tabular-nums">
-                          Rp
-                          {formatPlainRupiah(favorite.amount)}
+                          Rp{formatPlainRupiah(favorite.amount)}
                         </p>
                       </div>
                     </div>
@@ -410,6 +399,7 @@ function DashboardPage() {
                         <TransactionAmount
                           type={transaction.type}
                           amount={transaction.amount}
+                          adjustmentDirection={transaction.adjustmentDirection}
                         />
                       </div>
                     </div>
@@ -425,12 +415,34 @@ function DashboardPage() {
 }
 
 type TransactionAmountProps = {
-  type: 'expense' | 'income' | 'transfer' | 'investment'
+  type: 'expense' | 'income' | 'transfer' | 'investment' | 'adjustment'
   amount: number
+  adjustmentDirection?: 'increase' | 'decrease' | null
 }
 
-function TransactionAmount({ type, amount }: TransactionAmountProps) {
-  const prefix = type === 'income' ? '+' : type === 'expense' ? '-' : ''
+function TransactionAmount({
+  type,
+  amount,
+  adjustmentDirection,
+}: TransactionAmountProps) {
+  let prefix = ''
+
+  if (type === 'income') {
+    prefix = '+'
+  }
+
+  if (type === 'expense') {
+    prefix = '-'
+  }
+
+  if (type === 'adjustment') {
+    prefix =
+      adjustmentDirection === 'increase'
+        ? '+'
+        : adjustmentDirection === 'decrease'
+          ? '-'
+          : ''
+  }
 
   return (
     <p className="whitespace-nowrap text-sm font-semibold tabular-nums sm:text-right">

@@ -33,6 +33,9 @@ type TransactionFiltersProps = {
   categories: Category[]
 }
 
+type TransactionTypeFilter =
+  'expense' | 'income' | 'transfer' | 'investment' | 'adjustment'
+
 export function TransactionFilters({
   filters,
   accounts,
@@ -110,8 +113,7 @@ export function TransactionFilters({
                 type:
                   value === 'all'
                     ? undefined
-                    : (value as
-                        'expense' | 'income' | 'transfer' | 'investment'),
+                    : (value as TransactionTypeFilter),
               })
             }}
           >
@@ -129,6 +131,8 @@ export function TransactionFilters({
               <SelectItem value="transfer">Transfer</SelectItem>
 
               <SelectItem value="investment">Investasi</SelectItem>
+
+              <SelectItem value="adjustment">Penyesuaian Saldo</SelectItem>
             </SelectContent>
           </Select>
         </div>

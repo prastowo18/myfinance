@@ -1,7 +1,7 @@
 import {
-  bigint,
   boolean,
   date,
+  numeric,
   pgEnum,
   pgTable,
   text,
@@ -25,6 +25,12 @@ export const transactionTypeEnum = pgEnum('transaction_type', [
   'income',
   'transfer',
   'investment',
+  'adjustment',
+])
+
+export const adjustmentDirectionEnum = pgEnum('adjustment_direction', [
+  'increase',
+  'decrease',
 ])
 
 export const accounts = pgTable('accounts', {
@@ -36,7 +42,9 @@ export const accounts = pgTable('accounts', {
 
   type: accountTypeEnum('type').notNull(),
 
-  initialBalance: bigint('initial_balance', {
+  initialBalance: numeric('initial_balance', {
+    precision: 15,
+    scale: 2,
     mode: 'number',
   })
     .notNull()
@@ -86,11 +94,11 @@ export const transactions = pgTable('transactions', {
 
   type: transactionTypeEnum('type').notNull(),
 
-  title: varchar('title', {
-    length: 100,
-  }).notNull(),
+  title: text('title').notNull(),
 
-  amount: bigint('amount', {
+  amount: numeric('amount', {
+    precision: 15,
+    scale: 2,
     mode: 'number',
   }).notNull(),
 
@@ -102,23 +110,15 @@ export const transactions = pgTable('transactions', {
 
   targetAccountId: uuid('target_account_id').references(() => accounts.id),
 
-  transactionDate: date('transaction_date', {
-    mode: 'string',
-  }).notNull(),
+  adjustmentDirection: adjustmentDirectionEnum('adjustment_direction'),
+
+  transactionDate: date('transaction_date').notNull(),
 
   note: text('note'),
 
-  createdAt: timestamp('created_at', {
-    withTimezone: true,
-  })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 
-  updatedAt: timestamp('updated_at', {
-    withTimezone: true,
-  })
-    .notNull()
-    .defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 export const transactionFavorites = pgTable('transaction_favorites', {
@@ -130,7 +130,9 @@ export const transactionFavorites = pgTable('transaction_favorites', {
 
   type: transactionTypeEnum('type').notNull(),
 
-  amount: bigint('amount', {
+  amount: numeric('amount', {
+    precision: 15,
+    scale: 2,
     mode: 'number',
   }).notNull(),
 

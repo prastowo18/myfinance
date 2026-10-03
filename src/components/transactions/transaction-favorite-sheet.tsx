@@ -64,10 +64,6 @@ function getLocalDateString() {
   return `${year}-${month}-${day}`
 }
 
-function formatRupiah(value: number) {
-  return new Intl.NumberFormat('id-ID').format(value)
-}
-
 export function TransactionFavoriteSheet({
   favorite,
   accounts,

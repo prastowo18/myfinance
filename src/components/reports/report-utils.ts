@@ -1,3 +1,9 @@
+function moneyToCents(value: number) {
+  const cents = Math.round(value * 100)
+
+  return Object.is(cents, -0) ? 0 : cents
+}
+
 export function getCurrentMonth() {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Jakarta',
@@ -13,37 +19,28 @@ export function getCurrentMonth() {
 }
 
 export function formatRupiah(value: number) {
+  const cents = moneyToCents(value)
+
+  const normalizedValue = cents / 100
+
+  const hasDecimals = Math.abs(cents % 100) > 0
+
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value)
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(normalizedValue)
 }
 
+/*
+ * Dipertahankan agar komponen lama yang masih memanggil
+ * formatCompactRupiah tidak error.
+ *
+ * Sekarang sengaja menampilkan nominal penuh.
+ */
 export function formatCompactRupiah(value: number) {
-  const absoluteValue = Math.abs(value)
-
-  const sign = value < 0 ? '-' : ''
-
-  if (absoluteValue >= 1_000_000_000) {
-    return `${sign}Rp${new Intl.NumberFormat('id-ID', {
-      maximumFractionDigits: 1,
-    }).format(absoluteValue / 1_000_000_000)} M`
-  }
-
-  if (absoluteValue >= 1_000_000) {
-    return `${sign}Rp${new Intl.NumberFormat('id-ID', {
-      maximumFractionDigits: 1,
-    }).format(absoluteValue / 1_000_000)} jt`
-  }
-
-  if (absoluteValue >= 1_000) {
-    return `${sign}Rp${new Intl.NumberFormat('id-ID', {
-      maximumFractionDigits: 1,
-    }).format(absoluteValue / 1_000)} rb`
-  }
-
-  return `${sign}Rp${new Intl.NumberFormat('id-ID').format(absoluteValue)}`
+  return formatRupiah(value)
 }
 
 export function formatMonth(value: string) {

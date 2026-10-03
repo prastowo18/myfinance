@@ -10,6 +10,8 @@ import type {
 
 const targetAccounts = alias(accounts, 'favorite_target_accounts')
 
+type FavoriteTransactionType = 'expense' | 'income' | 'transfer' | 'investment'
+
 async function validateReferences(
   data: FavoriteFormValues | UpdateFavoriteValues,
 ) {
@@ -99,7 +101,7 @@ async function validateReferences(
 }
 
 export async function findFavorites() {
-  return db
+  const rows = await db
     .select({
       id: transactionFavorites.id,
       title: transactionFavorites.title,
@@ -127,6 +129,14 @@ export async function findFavorites() {
     )
     .where(eq(transactionFavorites.isActive, true))
     .orderBy(asc(transactionFavorites.title))
+
+  return rows.filter(
+    (
+      row,
+    ): row is typeof row & {
+      type: FavoriteTransactionType
+    } => row.type !== 'adjustment',
+  )
 }
 
 export async function createFavoriteRecord(data: FavoriteFormValues) {

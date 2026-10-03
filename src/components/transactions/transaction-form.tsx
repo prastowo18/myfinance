@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
+import { MoneyInput } from '#/components/ui/money-input'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
@@ -14,14 +16,14 @@ import {
 } from '#/components/ui/select'
 import { Textarea } from '#/components/ui/textarea'
 
+import { formatPlainRupiah } from '#/lib/money'
 import { transactionSchema } from '#/schemas/transaction'
 import type { TransactionFormValues } from '#/schemas/transaction'
+import { createFavorite } from '#/server/favorites.functions'
 import {
   createTransaction,
   updateTransaction,
 } from '#/server/transactions.functions'
-import { useState } from 'react'
-import { createFavorite } from '#/server/favorites.functions'
 
 type TransactionSuggestion = {
   title: string
@@ -53,10 +55,8 @@ type TransactionFormProps = {
   accounts: Account[]
   categories: Category[]
   suggestions?: TransactionSuggestion[]
-
   transactionId?: string
   initialValues?: TransactionFormValues
-
   onCreated?: () => void | Promise<void>
   onUpdated?: () => void | Promise<void>
 }
@@ -90,21 +90,12 @@ function getLocalDateString() {
   return `${year}-${month}-${day}`
 }
 
-function formatRupiah(value: number) {
-  if (!value) {
-    return ''
-  }
-
-  return new Intl.NumberFormat('id-ID').format(value)
-}
-
 function normalizeText(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 function getSuggestionScore(suggestion: TransactionSuggestion, query: string) {
   const normalizedQuery = normalizeText(query)
-
   const normalizedTitle = normalizeText(suggestion.title)
 
   let score = 0
@@ -153,6 +144,7 @@ export function TransactionForm({
   const isEditMode = Boolean(transactionId)
 
   const [isSavingFavorite, setIsSavingFavorite] = useState(false)
+
   const [showDetails, setShowDetails] = useState(isEditMode)
 
   const form = useForm<TransactionFormValues>({
@@ -171,8 +163,11 @@ export function TransactionForm({
   })
 
   const transactionType = form.watch('type')
+
   const amount = form.watch('amount')
+
   const title = form.watch('title')
+
   const sourceAccountId = form.watch('accountId')
 
   const isSubmitting = form.formState.isSubmitting
@@ -204,7 +199,7 @@ export function TransactionForm({
         })
 
         toast.success('Transaksi berhasil diperbarui', {
-          description: `${transaction.title} • Rp${formatRupiah(
+          description: `${transaction.title} • Rp${formatPlainRupiah(
             transaction.amount,
           )}`,
         })
@@ -219,7 +214,7 @@ export function TransactionForm({
       })
 
       toast.success('Transaksi berhasil disimpan', {
-        description: `${transaction.title} • Rp${formatRupiah(
+        description: `${transaction.title} • Rp${formatPlainRupiah(
           transaction.amount,
         )}`,
       })
@@ -267,13 +262,19 @@ export function TransactionForm({
     }
 
     if (amount > 0) {
-      return `Simpan Rp${formatRupiah(amount)}`
+      return `Simpan Rp${formatPlainRupiah(amount)}`
     }
 
     return 'Simpan transaksi'
   }
 
   async function saveAsFavorite(data: TransactionFormValues) {
+    if (data.type === 'adjustment') {
+      toast.error('Penyesuaian saldo tidak dapat disimpan sebagai favorit')
+
+      return
+    }
+
     try {
       setIsSavingFavorite(true)
 
@@ -355,24 +356,18 @@ export function TransactionForm({
           render={({ field, fieldState }) => (
             <>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
                   Rp
                 </span>
 
-                <Input
+                <MoneyInput
                   id="amount"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
                   placeholder="0"
-                  value={formatRupiah(field.value)}
-                  onChange={(event) => {
-                    const digits = event.target.value.replace(/\D/g, '')
-
-                    field.onChange(digits.length > 0 ? Number(digits) : 0)
-                  }}
+                  invalid={fieldState.invalid}
                   className="h-16 rounded-xl pl-11 text-2xl font-semibold tabular-nums"
-                  aria-invalid={fieldState.invalid}
                 />
               </div>
 
@@ -456,7 +451,7 @@ export function TransactionForm({
 
                       <p className="shrink-0 text-sm font-semibold tabular-nums">
                         Rp
-                        {formatRupiah(item.lastAmount)}
+                        {formatPlainRupiah(item.lastAmount)}
                       </p>
                     </div>
 
@@ -519,6 +514,7 @@ export function TransactionForm({
                       .map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.name}
+
                           {!account.isActive ? ' (Nonaktif)' : ''}
                         </SelectItem>
                       ))}
@@ -559,6 +555,7 @@ export function TransactionForm({
                       {availableCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
+
                           {!category.isActive ? ' (Nonaktif)' : ''}
                         </SelectItem>
                       ))}
@@ -628,6 +625,7 @@ export function TransactionForm({
                         {targetAccounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
                             {account.name}
+
                             {!account.isActive ? ' (Nonaktif)' : ''}
                           </SelectItem>
                         ))}
@@ -712,7 +710,7 @@ export function TransactionForm({
       {/* Action bar */}
       <div className="sticky bottom-0 z-20 -mx-4 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur sm:static sm:mx-0 sm:border-t sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4">
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
-          {!isEditMode && (
+          {!isEditMode && transactionType !== 'adjustment' && (
             <Button
               type="button"
               variant="outline"

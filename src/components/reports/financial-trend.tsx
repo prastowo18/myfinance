@@ -1,11 +1,6 @@
 import type { TrendItem, TrendRange } from './report-types'
 
-import {
-  formatCompactRupiah,
-  formatMonth,
-  formatRupiah,
-  formatShortMonth,
-} from './report-utils'
+import { formatMonth, formatRupiah, formatShortMonth } from './report-utils'
 
 type FinancialTrendProps = {
   data: TrendItem[]
@@ -89,21 +84,22 @@ export function FinancialTrend({
         <div className="grid gap-px border-b bg-border sm:grid-cols-2 xl:grid-cols-4">
           <TrendSummaryItem
             label="Rata-rata Pengeluaran"
-            value={formatCompactRupiah(averageExpense)}
+            value={formatRupiah(averageExpense)}
             description={`Per bulan selama ${range} bulan`}
           />
 
           <TrendSummaryItem
             label="Rata-rata Cash Flow"
-            value={formatCompactRupiah(averageCashFlow)}
+            value={formatRupiah(averageCashFlow)}
             description={`Per bulan selama ${range} bulan`}
+            negative={averageCashFlow < 0}
           />
 
           <TrendSummaryItem
             label="Pengeluaran Tertinggi"
             value={
               highestExpenseMonth
-                ? formatCompactRupiah(highestExpenseMonth.summary.expense)
+                ? formatRupiah(highestExpenseMonth.summary.expense)
                 : '—'
             }
             description={
@@ -117,7 +113,7 @@ export function FinancialTrend({
             label="Cash Flow Terendah"
             value={
               lowestCashFlowMonth
-                ? formatCompactRupiah(lowestCashFlowMonth.summary.cashFlow)
+                ? formatRupiah(lowestCashFlowMonth.summary.cashFlow)
                 : '—'
             }
             description={
@@ -151,7 +147,8 @@ export function FinancialTrend({
           <div
             className="px-5 pb-5 pt-6"
             style={{
-              minWidth: range === 12 ? '900px' : range === 6 ? '560px' : '100%',
+              minWidth:
+                range === 12 ? '1200px' : range === 6 ? '760px' : '100%',
             }}
           >
             <div
@@ -204,14 +201,14 @@ function TrendSummaryItem({
   negative = false,
 }: TrendSummaryItemProps) {
   return (
-    <div className="bg-card px-5 py-4">
+    <div className="min-w-0 bg-card px-5 py-4">
       <p className="text-xs text-muted-foreground">{label}</p>
 
       <p
         className={
           negative
-            ? 'mt-1 text-lg font-semibold tabular-nums text-destructive'
-            : 'mt-1 text-lg font-semibold tabular-nums'
+            ? 'mt-1 break-words text-lg font-semibold tabular-nums text-destructive'
+            : 'mt-1 break-words text-lg font-semibold tabular-nums'
         }
       >
         {value}
@@ -277,12 +274,12 @@ function TrendColumn({ item, maximumValue }: TrendColumnProps) {
         <p
           className={
             item.summary.cashFlow < 0
-              ? 'mt-0.5 truncate text-xs font-medium tabular-nums text-destructive'
-              : 'mt-0.5 truncate text-xs font-medium tabular-nums'
+              ? 'mt-0.5 whitespace-nowrap text-[11px] font-medium tabular-nums text-destructive'
+              : 'mt-0.5 whitespace-nowrap text-[11px] font-medium tabular-nums'
           }
           title={formatRupiah(item.summary.cashFlow)}
         >
-          {formatCompactRupiah(item.summary.cashFlow)}
+          {formatRupiah(item.summary.cashFlow)}
         </p>
       </div>
     </div>

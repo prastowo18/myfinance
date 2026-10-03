@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+const MAX_MONEY_VALUE = 9_999_999_999_999.99
+
+function hasAtMostTwoDecimals(value: number) {
+  const cents = value * 100
+
+  return Math.abs(cents - Math.round(cents)) < 0.000001
+}
+
 export const favoriteTypeSchema = z.enum([
   'expense',
   'income',
@@ -18,9 +26,11 @@ const favoriteFields = {
 
   amount: z
     .number()
-    .int('Nominal harus berupa angka bulat')
-    .positive('Nominal harus lebih dari 0')
-    .safe('Nominal terlalu besar'),
+    .min(0.01, 'Nominal minimal Rp0,01')
+    .max(MAX_MONEY_VALUE, 'Nominal terlalu besar')
+    .refine(hasAtMostTwoDecimals, {
+      error: 'Nominal maksimal 2 angka di belakang koma',
+    }),
 
   accountId: z.string().uuid('Account tidak valid'),
 
@@ -75,6 +85,7 @@ export const favoriteSchema = z
 export const updateFavoriteSchema = z
   .object({
     id: z.string().uuid('ID favorit tidak valid'),
+
     ...favoriteFields,
   })
   .superRefine(validateFavorite)

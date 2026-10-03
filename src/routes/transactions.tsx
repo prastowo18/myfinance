@@ -16,6 +16,7 @@ import { getFavorites } from '#/server/favorites.functions'
 import { TransactionFavoriteSheet } from '#/components/transactions/transaction-favorite-sheet'
 import { TransactionFavoriteDeactivateDialog } from '#/components/transactions/transaction-favorite-deactivate-dialog'
 import { TransactionFavoriteEditSheet } from '#/components/transactions/transaction-favorite-edit-sheet'
+import { formatRupiah } from '#/lib/money'
 
 export const Route = createFileRoute('/transactions')({
   validateSearch: (search) => {
@@ -48,9 +49,11 @@ export const Route = createFileRoute('/transactions')({
       getAccounts(),
       getCategories(),
       getAllCategories(),
+
       getTransactions({
         data: deps,
       }),
+
       getTransactionSuggestions(),
       getFavorites(),
     ])
@@ -73,15 +76,8 @@ const transactionTypeLabels = {
   income: 'Pemasukan',
   transfer: 'Transfer',
   investment: 'Investasi',
+  adjustment: 'Penyesuaian Saldo',
 } as const
-
-function formatRupiah(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -117,8 +113,8 @@ function TransactionsPage() {
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Catat dan kelola pemasukan, pengeluaran, transfer, serta
-              investasi.
+              Catat dan kelola pemasukan, pengeluaran, transfer, investasi,
+              serta riwayat penyesuaian saldo.
             </p>
           </div>
 
@@ -311,26 +307,37 @@ function TransactionsPage() {
                     <TransactionAmount
                       type={transaction.type}
                       amount={transaction.amount}
+                      adjustmentDirection={transaction.adjustmentDirection}
                     />
 
                     <div className="flex flex-wrap justify-end gap-1">
-                      <TransactionRepeatSheet
-                        transaction={transaction}
-                        accounts={accounts}
-                        categories={categories}
-                        onCreated={async () => {
-                          await router.invalidate()
-                        }}
-                      />
+                      {transaction.type !== 'adjustment' && (
+                        <>
+                          <TransactionRepeatSheet
+                            transaction={{
+                              ...transaction,
+                              type: transaction.type,
+                            }}
+                            accounts={accounts}
+                            categories={categories}
+                            onCreated={async () => {
+                              await router.invalidate()
+                            }}
+                          />
 
-                      <TransactionEditSheet
-                        transaction={transaction}
-                        accounts={accounts}
-                        categories={allCategories}
-                        onUpdated={async () => {
-                          await router.invalidate()
-                        }}
-                      />
+                          <TransactionEditSheet
+                            transaction={{
+                              ...transaction,
+                              type: transaction.type,
+                            }}
+                            accounts={accounts}
+                            categories={allCategories}
+                            onUpdated={async () => {
+                              await router.invalidate()
+                            }}
+                          />
+                        </>
+                      )}
 
                       <TransactionDeleteDialog
                         transaction={transaction}
@@ -351,12 +358,37 @@ function TransactionsPage() {
 }
 
 type TransactionAmountProps = {
-  type: 'expense' | 'income' | 'transfer' | 'investment'
+  type: 'expense' | 'income' | 'transfer' | 'investment' | 'adjustment'
+
   amount: number
+
+  adjustmentDirection?: 'increase' | 'decrease' | null
 }
 
-function TransactionAmount({ type, amount }: TransactionAmountProps) {
-  const prefix = type === 'income' ? '+' : type === 'expense' ? '-' : ''
+function TransactionAmount({
+  type,
+  amount,
+  adjustmentDirection,
+}: TransactionAmountProps) {
+  let prefix = ''
+
+  if (type === 'income') {
+    prefix = '+'
+  }
+
+  if (type === 'expense') {
+    prefix = '-'
+  }
+
+  if (type === 'adjustment') {
+    if (adjustmentDirection === 'increase') {
+      prefix = '+'
+    }
+
+    if (adjustmentDirection === 'decrease') {
+      prefix = '-'
+    }
+  }
 
   return (
     <p className="whitespace-nowrap text-base font-semibold tabular-nums">

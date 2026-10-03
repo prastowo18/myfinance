@@ -18,6 +18,7 @@ import { Label } from '#/components/ui/label'
 import { updateAccountSchema } from '#/schemas/account'
 import type { UpdateAccountFormValues } from '#/schemas/account'
 import { updateAccount } from '#/server/accounts.functions'
+import { MoneyInput } from '../ui/money-input'
 
 type AccountEditDialogProps = {
   account: {
@@ -38,14 +39,6 @@ const accountTypeLabels = {
   credit_card: 'Kartu Kredit',
   investment: 'Investasi',
 } as const
-
-function formatNumber(value: number) {
-  if (value === 0) {
-    return ''
-  }
-
-  return new Intl.NumberFormat('id-ID').format(value)
-}
 
 export function AccountEditDialog({
   account,
@@ -184,29 +177,13 @@ export function AccountEditDialog({
                     Rp
                   </span>
 
-                  <Input
+                  <MoneyInput
                     id={`initial-balance-${account.id}`}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    placeholder="0"
-                    value={formatNumber(field.value)}
-                    onChange={(event) => {
-                      const raw = event.target.value
-
-                      const isNegative = raw.trim().startsWith('-')
-
-                      const digits = raw.replace(/\D/g, '')
-
-                      if (!digits) {
-                        field.onChange(0)
-                        return
-                      }
-
-                      const amount = Number(digits)
-
-                      field.onChange(isNegative ? -amount : amount)
-                    }}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    allowNegative
+                    invalid={fieldState.invalid}
                     className="pl-10"
                   />
                 </div>

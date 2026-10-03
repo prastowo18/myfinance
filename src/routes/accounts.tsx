@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 
+import { AccountBalanceAdjustmentDialog } from '#/components/accounts/account-balance-adjustment-dialog'
 import { AccountDialog } from '#/components/accounts/account-dialog'
 import { AccountEditDialog } from '#/components/accounts/account-edit-dialog'
 import { getAccounts } from '#/server/accounts.functions'
@@ -148,23 +149,34 @@ function AccountsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-end justify-between gap-4 border-t pt-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Saldo awal
-                      </p>
+                  <div className="mt-5 border-t pt-4">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Saldo awal
+                        </p>
 
-                      <p className="mt-1 text-sm font-medium tabular-nums">
-                        {formatRupiah(account.initialBalance)}
-                      </p>
+                        <p className="mt-1 text-sm font-medium tabular-nums">
+                          {formatRupiah(account.initialBalance)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <AccountBalanceAdjustmentDialog
+                          account={account}
+                          onAdjusted={async () => {
+                            await router.invalidate()
+                          }}
+                        />
+
+                        <AccountEditDialog
+                          account={account}
+                          onUpdated={async () => {
+                            await router.invalidate()
+                          }}
+                        />
+                      </div>
                     </div>
-
-                    <AccountEditDialog
-                      account={account}
-                      onUpdated={async () => {
-                        await router.invalidate()
-                      }}
-                    />
                   </div>
                 </article>
               ))}

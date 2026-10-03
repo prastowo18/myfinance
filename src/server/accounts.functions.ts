@@ -3,9 +3,15 @@ import { createServerFn } from '@tanstack/react-start'
 import {
   createAccountRecord,
   findAccounts,
+  adjustAccountBalanceRecord,
   updateAccountRecord,
 } from './accounts.server'
-import { accountSchema, updateAccountSchema } from '#/schemas/account'
+
+import {
+  accountSchema,
+  adjustAccountBalanceSchema,
+  updateAccountSchema,
+} from '#/schemas/account'
 
 export const getAccounts = createServerFn({
   method: 'GET',
@@ -27,4 +33,12 @@ export const updateAccount = createServerFn({
   .validator(updateAccountSchema)
   .handler(async ({ data }) => {
     return updateAccountRecord(data)
+  })
+
+export const adjustAccountBalance = createServerFn({
+  method: 'POST',
+})
+  .validator(adjustAccountBalanceSchema)
+  .handler(async ({ data }) => {
+    return adjustAccountBalanceRecord(data)
   })

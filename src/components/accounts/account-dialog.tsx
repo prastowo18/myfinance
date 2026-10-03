@@ -19,6 +19,7 @@ import { Label } from '#/components/ui/label'
 import { accountSchema } from '#/schemas/account'
 import type { AccountFormValues } from '#/schemas/account'
 import { createAccount } from '#/server/accounts.functions'
+import { MoneyInput } from '../ui/money-input'
 
 type AccountDialogProps = {
   onCreated?: () => void | Promise<void>
@@ -46,14 +47,6 @@ const accountTypes = [
     label: 'Investasi',
   },
 ] as const
-
-function formatNumber(value: number) {
-  if (value === 0) {
-    return ''
-  }
-
-  return new Intl.NumberFormat('id-ID').format(value)
-}
 
 export function AccountDialog({ onCreated }: AccountDialogProps) {
   const [open, setOpen] = useState(false)
@@ -204,18 +197,13 @@ export function AccountDialog({ onCreated }: AccountDialogProps) {
                     Rp
                   </span>
 
-                  <Input
+                  <MoneyInput
                     id="initialBalance"
-                    type="number"
-                    inputMode="numeric"
-                    value={field.value === 0 ? '' : field.value}
-                    onChange={(event) => {
-                      field.onChange(
-                        event.target.value === ''
-                          ? 0
-                          : Number(event.target.value),
-                      )
-                    }}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    allowNegative
+                    invalid={fieldState.invalid}
                     className="h-12 rounded-xl pl-10 text-lg font-semibold tabular-nums"
                   />
                 </div>
